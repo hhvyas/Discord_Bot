@@ -11,7 +11,6 @@ import json
 import urllib.request
 from PIL import Image as im
 from PIL import ImageOps
-from keep_alive import keep_alive
 
 # funtion for dictionary
 def comman(msg):
@@ -284,6 +283,7 @@ client = discord.Client()
 rnd = 0
 cnt = 0
 timedel = 0
+quiz_checker=0
 
 @client.event
 async def on_ready():
@@ -302,6 +302,7 @@ async def on_message(msg):
   global ArrChoice
   global rnd
   global cnt
+  global quiz_checker
   if msg.author == client.user:
     return 
   if msg.content.startswith('!leader'):
@@ -468,41 +469,41 @@ async def on_message(msg):
         await msg.channel.send("Correct !!!")
         await msg.channel.send(score)
 
-  elif msg.content.startswith('!quiz'):
-    ArrChoice.clear()
-    rnd = random.randint(0, 49)
-    Question = html.unescape(data['results'][rnd]['question'])
-    await msg.channel.send("Question: " + Question)
-    ArrChoice.append(html.unescape(data['results'][rnd]['correct_answer']))
-    for i in range (0, 3):
-      ArrChoice.append(html.unescape(data['results'][rnd]['incorrect_answers'][i]))
-    random.shuffle(ArrChoice)
-    option = "A"
-    for word in ArrChoice:
-      await msg.channel.send(chr(ord(option) + cnt) + ") " + word)
-      cnt += 1
-    cnt = 0
-    return
-  answer_given = str(msg.content)
-  answer_given = answer_given.upper()
-  if len(answer_given) != 1:
-    return
-  if answer_given != 'A' and answer_given != 'B' and answer_given != 'C' and answer_given != 'D':
-    return
-  curr_ans = str(html.unescape(data['results'][rnd]['correct_answer']))
-  username = str(msg.author).split("#")[0]
-  if not username in user:
-    user[username] = 0
-  usr_ans = ArrChoice[ord(msg.content.upper()) - 65]
-  if curr_ans == usr_ans:
-    await msg.channel.send("Correct!")
-      #Score Calculation
-    user[username] += 1
-    ArrChoice.clear()
-    return
-  await msg.channel.send("Incorrect!")
-  await msg.channel.send("Correct Answer is " + curr_ans)
-  ArrChoice.clear()
+  elif (msg.content.startswith('!quiz') or quiz_checker == 1):
+    if quiz_checker == 0:
+      quiz_checker = 1
+      ArrChoice.clear()
+      rnd = random.randint(0, 49)
+      Question = html.unescape(data['results'][rnd]['question'])
+      await msg.channel.send("Question: " + Question)
+      ArrChoice.append(html.unescape(data['results'][rnd]['correct_answer']))
+      for i in range (0, 3):
+        ArrChoice.append(html.unescape(data['results'][rnd]['incorrect_answers'][i]))
+      random.shuffle(ArrChoice)
+      option = "A"
+      for word in ArrChoice:
+        await msg.channel.send(chr(ord(option) + cnt) + ") " + word)
+        cnt += 1
+      cnt = 0
+    else:
+      answer_given = str(msg.content)
+      answer_given = answer_given.upper()
+      if answer_given != 'A' and answer_given != 'B' and answer_given != 'C' and answer_given != 'D':
+        return
+      curr_ans = str(html.unescape(data['results'][rnd]['correct_answer']))
+      username = str(msg.author).split("#")[0]
+      if not username in user:
+        user[username] = 0
+      usr_ans = ArrChoice[ord(msg.content.upper()) - 65]
+      if curr_ans == usr_ans:
+        await msg.channel.send("Correct!")
+        user[username] += 1
+        ArrChoice.clear()
+        quiz_checker = 0
+        return
+      await msg.channel.send("Incorrect!")
+      await msg.channel.send("Correct Answer is " + curr_ans)
+      ArrChoice.clear()
+      quiz_checker = 0
   
-keep_alive()
-client.run(os.getenv('TOKEN'))
+client.run('')
